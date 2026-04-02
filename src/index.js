@@ -189,7 +189,7 @@ async function run() {
         );
     }
 
-    const output = JSON.stringify(result);
+    const output = typeof result === "string" ? result : JSON.stringify(result);
     core.setOutput("result", output);
     core.info(`${command} ${key ? key + " " : ""}→ ${output}`);
   } catch (error) {
