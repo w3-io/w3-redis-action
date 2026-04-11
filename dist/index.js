@@ -4206,7 +4206,7 @@ exports.colors = [6, 2, 3, 4, 5, 1];
 try {
 	// Optional dependency (as in, doesn't need to be installed, NOT like optionalDependencies in package.json)
 	// eslint-disable-next-line import/no-extraneous-dependencies
-	const supportsColor = __nccwpck_require__(75);
+	const supportsColor = __nccwpck_require__(1450);
 
 	if (supportsColor && (supportsColor.stderr || supportsColor).level >= 2) {
 		exports.colors = [
@@ -4926,6 +4926,21 @@ Denque.prototype._nextPowerOf2 = function _nextPowerOf2(num) {
 }
 
 module.exports = Denque;
+
+
+/***/ }),
+
+/***/ 3813:
+/***/ ((module) => {
+
+
+
+module.exports = (flag, argv = process.argv) => {
+	const prefix = flag.startsWith('-') ? '' : (flag.length === 1 ? '-' : '--');
+	const position = argv.indexOf(prefix + flag);
+	const terminatorPosition = argv.indexOf('--');
+	return position !== -1 && (terminatorPosition === -1 || position < terminatorPosition);
+};
 
 
 /***/ }),
@@ -13036,6 +13051,148 @@ function tryCatch(fn) {
     return tryCatcher;
 }
 exports.tryCatch = tryCatch;
+
+
+/***/ }),
+
+/***/ 1450:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+
+const os = __nccwpck_require__(857);
+const tty = __nccwpck_require__(2018);
+const hasFlag = __nccwpck_require__(3813);
+
+const {env} = process;
+
+let forceColor;
+if (hasFlag('no-color') ||
+	hasFlag('no-colors') ||
+	hasFlag('color=false') ||
+	hasFlag('color=never')) {
+	forceColor = 0;
+} else if (hasFlag('color') ||
+	hasFlag('colors') ||
+	hasFlag('color=true') ||
+	hasFlag('color=always')) {
+	forceColor = 1;
+}
+
+if ('FORCE_COLOR' in env) {
+	if (env.FORCE_COLOR === 'true') {
+		forceColor = 1;
+	} else if (env.FORCE_COLOR === 'false') {
+		forceColor = 0;
+	} else {
+		forceColor = env.FORCE_COLOR.length === 0 ? 1 : Math.min(parseInt(env.FORCE_COLOR, 10), 3);
+	}
+}
+
+function translateLevel(level) {
+	if (level === 0) {
+		return false;
+	}
+
+	return {
+		level,
+		hasBasic: true,
+		has256: level >= 2,
+		has16m: level >= 3
+	};
+}
+
+function supportsColor(haveStream, streamIsTTY) {
+	if (forceColor === 0) {
+		return 0;
+	}
+
+	if (hasFlag('color=16m') ||
+		hasFlag('color=full') ||
+		hasFlag('color=truecolor')) {
+		return 3;
+	}
+
+	if (hasFlag('color=256')) {
+		return 2;
+	}
+
+	if (haveStream && !streamIsTTY && forceColor === undefined) {
+		return 0;
+	}
+
+	const min = forceColor || 0;
+
+	if (env.TERM === 'dumb') {
+		return min;
+	}
+
+	if (process.platform === 'win32') {
+		// Windows 10 build 10586 is the first Windows release that supports 256 colors.
+		// Windows 10 build 14931 is the first release that supports 16m/TrueColor.
+		const osRelease = os.release().split('.');
+		if (
+			Number(osRelease[0]) >= 10 &&
+			Number(osRelease[2]) >= 10586
+		) {
+			return Number(osRelease[2]) >= 14931 ? 3 : 2;
+		}
+
+		return 1;
+	}
+
+	if ('CI' in env) {
+		if (['TRAVIS', 'CIRCLECI', 'APPVEYOR', 'GITLAB_CI', 'GITHUB_ACTIONS', 'BUILDKITE'].some(sign => sign in env) || env.CI_NAME === 'codeship') {
+			return 1;
+		}
+
+		return min;
+	}
+
+	if ('TEAMCITY_VERSION' in env) {
+		return /^(9\.(0*[1-9]\d*)\.|\d{2,}\.)/.test(env.TEAMCITY_VERSION) ? 1 : 0;
+	}
+
+	if (env.COLORTERM === 'truecolor') {
+		return 3;
+	}
+
+	if ('TERM_PROGRAM' in env) {
+		const version = parseInt((env.TERM_PROGRAM_VERSION || '').split('.')[0], 10);
+
+		switch (env.TERM_PROGRAM) {
+			case 'iTerm.app':
+				return version >= 3 ? 3 : 2;
+			case 'Apple_Terminal':
+				return 2;
+			// No default
+		}
+	}
+
+	if (/-256(color)?$/i.test(env.TERM)) {
+		return 2;
+	}
+
+	if (/^screen|^xterm|^vt100|^vt220|^rxvt|color|ansi|cygwin|linux/i.test(env.TERM)) {
+		return 1;
+	}
+
+	if ('COLORTERM' in env) {
+		return 1;
+	}
+
+	return min;
+}
+
+function getSupportLevel(stream) {
+	const level = supportsColor(stream, stream && stream.isTTY);
+	return translateLevel(level);
+}
+
+module.exports = {
+	supportsColor: getSupportLevel,
+	stdout: translateLevel(supportsColor(true, tty.isatty(1))),
+	stderr: translateLevel(supportsColor(true, tty.isatty(2)))
+};
 
 
 /***/ }),
@@ -35415,14 +35572,6 @@ module.exports = {
 
 /***/ }),
 
-/***/ 75:
-/***/ ((module) => {
-
-module.exports = eval("require")("supports-color");
-
-
-/***/ }),
-
 /***/ 2613:
 /***/ ((module) => {
 
@@ -37384,36 +37533,26 @@ var lib_core = __nccwpck_require__(7484);
 ;// CONCATENATED MODULE: ./node_modules/@w3-io/action-core/dist/input.js
 
 /**
- * Parse a JSON input. Returns the parsed value or undefined if empty.
- * Throws with a clear message if the input contains invalid JSON.
+ * Read an input and parse it as JSON. Returns the parsed value.
+ * Throws if the input is missing (when required) or not valid JSON.
  */
-function parseJsonInput(name) {
-    const raw = core.getInput(name);
-    if (!raw.trim())
+function parseJsonInput(name, options) {
+    const raw = core.getInput(name, options);
+    if (!raw)
         return undefined;
-    try {
-        return JSON.parse(raw);
-    }
-    catch {
-        throw new Error(`Input '${name}' is not valid JSON: ${raw.slice(0, 100)}`);
-    }
+    return JSON.parse(raw);
 }
 /**
- * Get a required input. Throws if missing or empty.
+ * Read a required input. Throws if missing.
  */
 function requireInput(name) {
-    const value = core.getInput(name);
-    if (!value.trim()) {
-        throw new Error(`Required input '${name}' is missing`);
-    }
-    return value;
+    return core.getInput(name, { required: true });
 }
 /**
- * Get an optional input with a default value.
+ * Read an optional input. Returns undefined if empty.
  */
-function getOptionalInput(name, defaultValue = "") {
-    const value = core.getInput(name);
-    return value.trim() || defaultValue;
+function getOptionalInput(name) {
+    return core.getInput(name) || undefined;
 }
 
 ;// CONCATENATED MODULE: ./node_modules/@w3-io/action-core/dist/output.js
@@ -37433,7 +37572,9 @@ function setJsonOutput(name, value) {
  */
 function setOutputs(outputs) {
     for (const [key, value] of Object.entries(outputs)) {
-        setJsonOutput(key, value);
+        if (value != null) {
+            setJsonOutput(key, value);
+        }
     }
 }
 
@@ -37478,82 +37619,35 @@ function handleError(error) {
 ;// CONCATENATED MODULE: ./node_modules/@w3-io/action-core/dist/http.js
 
 /**
- * Make an HTTP request with timeout, retry, and structured errors.
+ * Make an HTTP request with JSON body. Returns parsed JSON response.
  *
- * - Retries on 429 and 5xx with exponential backoff
- * - Parses JSON response automatically
- * - Throws W3ActionError with status code on failure
+ * For partner API clients that don't need the bridge.
  */
 async function request(url, options = {}) {
-    const { method = "GET", headers = {}, body, timeout = 30000, retries = 2, retryDelay = 1000, } = options;
-    const init = {
-        method,
-        headers: {
-            "Content-Type": "application/json",
-            ...headers,
-        },
-        signal: AbortSignal.timeout(timeout),
-    };
-    if (body !== undefined) {
-        init.body = typeof body === "string" ? body : JSON.stringify(body);
-    }
-    let lastError;
-    for (let attempt = 0; attempt <= retries; attempt++) {
-        try {
-            const res = await fetch(url, init);
-            const raw = await res.text();
-            let parsed;
-            try {
-                parsed = JSON.parse(raw);
-            }
-            catch {
-                parsed = raw;
-            }
-            const responseHeaders = {};
-            res.headers.forEach((v, k) => {
-                responseHeaders[k] = v;
+    const { method = "GET", headers = {}, body, timeout = 30000 } = options;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeout);
+    try {
+        const response = await fetch(url, {
+            method,
+            headers: {
+                "Content-Type": "application/json",
+                ...headers,
+            },
+            body: body ? JSON.stringify(body) : undefined,
+            signal: controller.signal,
+        });
+        if (!response.ok) {
+            const text = await response.text().catch(() => "");
+            throw new W3ActionError("HTTP_ERROR", `${response.status}: ${text}`, {
+                statusCode: response.status,
             });
-            if (!res.ok) {
-                // Retry on 429 (rate limit) and 5xx (server error)
-                if ((res.status === 429 || res.status >= 500) &&
-                    attempt < retries) {
-                    await sleep(retryDelay * 2 ** attempt);
-                    continue;
-                }
-                throw new W3ActionError("HTTP_ERROR", `${method} ${url}: ${res.status}`, {
-                    statusCode: res.status,
-                    details: parsed,
-                });
-            }
-            return { status: res.status, headers: responseHeaders, body: parsed, raw };
         }
-        catch (error) {
-            if (error instanceof W3ActionError)
-                throw error;
-            lastError = error instanceof Error ? error : new Error(String(error));
-            if (attempt < retries) {
-                await sleep(retryDelay * 2 ** attempt);
-                continue;
-            }
-        }
+        return (await response.json());
     }
-    throw new W3ActionError("REQUEST_FAILED", `${method} ${url}: ${lastError?.message ?? "unknown error"}`);
-}
-function sleep(ms) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-}
-/**
- * Convenience: add API key auth header.
- */
-function apiKeyAuth(key, headerName = "Authorization", prefix = "Bearer") {
-    return { [headerName]: `${prefix} ${key}` };
-}
-/**
- * Convenience: add basic auth header.
- */
-function basicAuth(username, password) {
-    const encoded = Buffer.from(`${username}:${password}`).toString("base64");
-    return { Authorization: `Basic ${encoded}` };
+    finally {
+        clearTimeout(timer);
+    }
 }
 
 ;// CONCATENATED MODULE: ./node_modules/@w3-io/action-core/dist/command.js
@@ -37597,8 +37691,17 @@ function createCommandRouter(commands) {
  *   - $W3_BRIDGE_URL    → TCP URL (macOS Docker Desktop fallback)
  *
  * Usage:
- *   import { bridge } from "@w3-io/action-core";
+ *   import { bridge, ethereum } from "@w3-io/action-core";
  *
+ *   // Typed helpers (recommended — autocomplete + type checking):
+ *   const receipt = await ethereum.callContract({
+ *     contract: "0x...",
+ *     method: "deposit(uint256)",
+ *     args: ["1000000"],
+ *     gasMultiplier: "1.5",
+ *   });
+ *
+ *   // Generic (full control):
  *   const balance = await bridge.chain("ethereum", "get-balance", {
  *     address: "0x...",
  *   });
@@ -37609,29 +37712,17 @@ function createCommandRouter(commands) {
 // ---------------------------------------------------------------------------
 // Transport
 // ---------------------------------------------------------------------------
-/**
- * Resolve the bridge endpoint from environment variables.
- *
- * Returns a fetch-compatible URL and optional Unix socket path.
- */
 function resolveEndpoint() {
     const bridgeUrl = process.env.W3_BRIDGE_URL;
     if (bridgeUrl) {
         return { url: bridgeUrl };
     }
     const socketPath = process.env.W3_BRIDGE_SOCKET ?? "/var/run/w3/bridge.sock";
-    // Node's fetch doesn't support Unix sockets natively.
-    // We use http.request for Unix socket transport.
     return { url: "http://localhost", socketPath };
 }
-/**
- * Make an HTTP request to the bridge. Handles both TCP and Unix socket
- * transports transparently.
- */
 async function bridgeRequest(path, body) {
     const { url, socketPath } = resolveEndpoint();
     if (socketPath) {
-        // Unix socket transport via Node's http module
         const http = await Promise.resolve(/* import() */).then(__nccwpck_require__.t.bind(__nccwpck_require__, 7067, 19));
         return new Promise((resolve, reject) => {
             const payload = body ? JSON.stringify(body) : undefined;
@@ -37641,7 +37732,9 @@ async function bridgeRequest(path, body) {
                 method: body ? "POST" : "GET",
                 headers: {
                     "Content-Type": "application/json",
-                    ...(payload ? { "Content-Length": Buffer.byteLength(payload) } : {}),
+                    ...(payload
+                        ? { "Content-Length": Buffer.byteLength(payload) }
+                        : {}),
                 },
             }, (res) => {
                 let data = "";
@@ -37653,15 +37746,12 @@ async function bridgeRequest(path, body) {
                             reject(new error_W3ActionError(err.code ?? "BRIDGE_ERROR", err.error ?? `Bridge returned ${res.statusCode}`, { statusCode: res.statusCode, details: err }));
                         }
                         catch {
-                            reject(new error_W3ActionError("BRIDGE_ERROR", data || `HTTP ${res.statusCode}`, {
-                                statusCode: res.statusCode,
-                            }));
+                            reject(new error_W3ActionError("BRIDGE_ERROR", data || `HTTP ${res.statusCode}`, { statusCode: res.statusCode }));
                         }
                         return;
                     }
                     try {
-                        const parsed = JSON.parse(data);
-                        resolve(parsed);
+                        resolve(JSON.parse(data));
                     }
                     catch {
                         resolve(data);
@@ -37700,9 +37790,19 @@ async function bridgeRequest(path, body) {
         return text;
     }
 }
-/**
- * Check if the bridge is available.
- */
+// ---------------------------------------------------------------------------
+// Internal helpers
+// ---------------------------------------------------------------------------
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function chainRequest(chainName, action, params, network) {
+    return bridgeRequest(`/${chainName}/${action}`, {
+        network: network ?? chainName,
+        params,
+    });
+}
+// ---------------------------------------------------------------------------
+// Public API — generic
+// ---------------------------------------------------------------------------
 async function health() {
     try {
         const res = (await bridgeRequest("/health"));
@@ -37713,42 +37813,83 @@ async function health() {
     }
 }
 /**
- * Call a chain operation via the bridge.
+ * Execute a chain operation.
  *
- * @param chain - "ethereum", "bitcoin", or "solana"
- * @param action - Operation name (e.g. "get-balance", "transfer", "call-contract")
- * @param params - Action-specific parameters
- * @param network - Network identifier (e.g. "ethereum-sepolia", "avalanche-fuji")
+ * For type-safe calls, use the typed helpers (`ethereum`, `solana`,
+ * `bitcoin`) instead. This generic method accepts any params.
  */
 async function chain(chainName, action, params, network) {
-    return (await bridgeRequest(`/${chainName}/${action}`, {
-        network: network ?? chainName,
-        params,
-    }));
+    return chainRequest(chainName, action, params, network);
 }
-/**
- * Call a crypto operation via the bridge.
- *
- * @param action - Operation name (e.g. "keccak-256", "aes-encrypt", "jwt-create")
- * @param params - Operation-specific parameters
- */
 async function bridge_crypto(action, params) {
     return (await bridgeRequest(`/crypto/${action}`, {
         params,
     }));
 }
+// ---------------------------------------------------------------------------
+// Public API — typed chain helpers
+// ---------------------------------------------------------------------------
+/** Typed Ethereum operations. */
+const ethereum = {
+    getBalance: (params, network) => chainRequest("ethereum", "get-balance", params, network),
+    readContract: (params, network) => chainRequest("ethereum", "read-contract", params, network),
+    callContract: (params, network) => chainRequest("ethereum", "call-contract", params, network),
+    transfer: (params, network) => chainRequest("ethereum", "transfer", params, network),
+    sendTransaction: (params, network) => chainRequest("ethereum", "send-transaction", params, network),
+    deployContract: (params, network) => chainRequest("ethereum", "deploy-contract", params, network),
+    transferToken: (params, network) => chainRequest("ethereum", "transfer-token", params, network),
+    approveToken: (params, network) => chainRequest("ethereum", "approve-token", params, network),
+    transferNft: (params, network) => chainRequest("ethereum", "transfer-nft", params, network),
+    getTransaction: (params, network) => chainRequest("ethereum", "get-transaction", params, network),
+    waitForTransaction: (params, network) => chainRequest("ethereum", "wait-for-transaction", params, network),
+    getEvents: (params, network) => chainRequest("ethereum", "get-events", params, network),
+    resolveName: (params, network) => chainRequest("ethereum", "resolve-name", params, network),
+    getTokenBalance: (params, network) => chainRequest("ethereum", "get-token-balance", params, network),
+    getTokenAllowance: (params, network) => chainRequest("ethereum", "get-token-allowance", params, network),
+    getNftOwner: (params, network) => chainRequest("ethereum", "get-nft-owner", params, network),
+    getNftMetadata: (params, network) => chainRequest("ethereum", "get-nft-metadata", params, network),
+};
+/** Typed Solana operations. */
+const solana = {
+    getBalance: (params, network) => chainRequest("solana", "get-balance", params, network),
+    transfer: (params, network) => chainRequest("solana", "transfer", params, network),
+    transferToken: (params, network) => chainRequest("solana", "transfer-token", params, network),
+    callProgram: (params, network) => chainRequest("solana", "call-program", params, network),
+    getAccount: (params, network) => chainRequest("solana", "get-account", params, network),
+    getTokenBalance: (params, network) => chainRequest("solana", "get-token-balance", params, network),
+    getTokenAccounts: (params, network) => chainRequest("solana", "get-token-accounts", params, network),
+    getTransaction: (params, network) => chainRequest("solana", "get-transaction", params, network),
+    waitForTransaction: (params, network) => chainRequest("solana", "wait-for-transaction", params, network),
+    /** Generate an ephemeral keypair for use as an additional signer. */
+    generateKeypair: () => bridgeRequest("/solana/generate-keypair", {}),
+    /** Get the payer's public key (no secret exposed). */
+    payerAddress: () => bridgeRequest("/solana/payer-address"),
+};
+/** Typed Bitcoin operations. */
+const bitcoin = {
+    getBalance: (params, network) => chainRequest("bitcoin", "get-balance", params, network),
+    send: (params, network) => chainRequest("bitcoin", "send", params, network),
+    getUtxos: (params, network) => chainRequest("bitcoin", "get-utxos", params, network),
+    getTransaction: (params, network) => chainRequest("bitcoin", "get-transaction", params, network),
+    getFeeRate: (params, network) => chainRequest("bitcoin", "get-fee-rate", params ?? {}, network),
+    waitForTransaction: (params, network) => chainRequest("bitcoin", "wait-for-transaction", params, network),
+};
+// ---------------------------------------------------------------------------
+// Default export
+// ---------------------------------------------------------------------------
 /**
- * The bridge client. Import and use:
+ * The bridge client.
  *
- *   import { bridge } from "@w3-io/action-core";
+ *   import { bridge, ethereum, solana, bitcoin } from "@w3-io/action-core";
  *
- *   // Chain operations
+ *   // Typed (recommended):
+ *   const receipt = await ethereum.callContract({ contract, method, args });
+ *   const sig = await solana.callProgram({ programId, accounts, data });
+ *   const tx = await bitcoin.send({ to, amount });
+ *
+ *   // Generic:
  *   const bal = await bridge.chain("ethereum", "get-balance", { address });
- *
- *   // Crypto
  *   const hash = await bridge.crypto("keccak-256", { data: "0x..." });
- *
- *   // Health check
  *   const ok = await bridge.health();
  */
 const bridge = {
@@ -37757,48 +37898,69 @@ const bridge = {
     crypto: bridge_crypto,
 };
 
+;// CONCATENATED MODULE: ./node_modules/@w3-io/action-core/dist/summary.js
+
+/**
+ * Write a job summary safely.
+ *
+ * Wraps `@actions/core` summary with proper `await` and error handling.
+ * The W3 runner sets GITHUB_STEP_SUMMARY and mounts a writable file,
+ * so this works on both GitHub Actions and W3. If the summary file is
+ * unavailable (local dev, CI without summary support), the write is
+ * silently skipped.
+ *
+ * Usage:
+ *   await writeSummary("My Action: deposit", [
+ *     ["Amount", "1000 USDC"],
+ *     ["TX", "`0xabc...`"],
+ *   ]);
+ *
+ *   await writeSummary("My Action: query", result);
+ */
+async function writeSummary(heading, content) {
+    try {
+        core.summary.addHeading(heading, 3);
+        if (typeof content === "string") {
+            core.summary.addRaw(content);
+        }
+        else if (Array.isArray(content)) {
+            // Key-value pairs rendered as markdown
+            for (const [key, value] of content) {
+                core.summary.addRaw(`**${key}:** ${value}\n\n`);
+            }
+        }
+        else {
+            core.summary.addCodeBlock(JSON.stringify(content, null, 2), "json");
+        }
+        await core.summary.write();
+    }
+    catch {
+        // Silently skip — environment may not support job summaries
+    }
+}
+
 ;// CONCATENATED MODULE: ./node_modules/@w3-io/action-core/dist/test.js
 /**
  * Test utilities for W3 actions.
  *
  * Mocks @actions/core so you can test command handlers in isolation
  * without running the full GitHub Actions runtime.
- *
- * Usage:
- *   import { mockAction, expectOutput, expectFailed } from "@w3-io/action-core/test";
- *
- *   test("keccak-256 hashes correctly", async () => {
- *     mockAction({ command: "keccak-256", input: "48656c6c6f" });
- *     await import("../src/index.js");
- *     expectOutput("result", (val) => val.includes("hash"));
- *   });
  */
 let _inputs = {};
 let _outputs = new Map();
 let _failed = null;
-/**
- * Set up mock inputs for the next action invocation.
- * Call this before importing/running the action.
- */
 function mockAction(inputs) {
     _inputs = inputs;
     _outputs = new Map();
     _failed = null;
-    // Mock process.env for @actions/core.getInput()
     for (const [key, value] of Object.entries(inputs)) {
         const envKey = `INPUT_${key.replace(/-/g, "_").toUpperCase()}`;
         process.env[envKey] = value;
     }
 }
-/**
- * Get an output that was set during action execution.
- */
 function getOutput(name) {
     return _outputs.get(name);
 }
-/**
- * Assert an output was set and optionally validate its value.
- */
 function expectOutput(name, validator) {
     const value = _outputs.get(name);
     if (value === undefined) {
@@ -37808,9 +37970,6 @@ function expectOutput(name, validator) {
         throw new Error(`Output "${name}" failed validation. Value: ${value}`);
     }
 }
-/**
- * Assert the action failed with a specific message pattern.
- */
 function expectFailed(pattern) {
     if (_failed === null) {
         throw new Error("Expected action to fail, but it succeeded");
@@ -37824,17 +37983,11 @@ function expectFailed(pattern) {
         }
     }
 }
-/**
- * Assert the action succeeded (did not call setFailed).
- */
 function expectSuccess() {
     if (_failed !== null) {
         throw new Error(`Expected action to succeed, but it failed: "${_failed}"`);
     }
 }
-/**
- * Clean up mock environment after tests.
- */
 function cleanupMock() {
     for (const key of Object.keys(process.env)) {
         if (key.startsWith("INPUT_")) {
@@ -37845,14 +37998,8 @@ function cleanupMock() {
     _outputs = new Map();
     _failed = null;
 }
-/**
- * Create a mock @actions/core module that captures outputs and failures.
- *
- * Use this to intercept setOutput/setFailed calls:
- *   const core = createMockCore();
- *   // pass core to your command handler
- */
 function createMockCore() {
+    const noopChain = () => ({ addRaw: noopChain, addHeading: noopChain, addCodeBlock: noopChain, write: async () => { } });
     return {
         getInput: (name, opts) => {
             const value = _inputs[name] ?? "";
@@ -37871,13 +38018,12 @@ function createMockCore() {
         warning: (_msg) => { },
         error: (_msg) => { },
         debug: (_msg) => { },
-        summary: {
-            addHeading: () => ({ addRaw: () => ({ write: async () => { } }) }),
-        },
+        summary: { addHeading: noopChain, addRaw: noopChain, addCodeBlock: noopChain, write: async () => { } },
     };
 }
 
 ;// CONCATENATED MODULE: ./node_modules/@w3-io/action-core/dist/index.js
+
 
 
 
@@ -37893,194 +38039,224 @@ var built = __nccwpck_require__(7796);
 
 
 
-let redis
+let redis;
 
 const router = createCommandRouter({
   // --- String operations ---
-  'get': async () => {
-    await connect()
-    setJsonOutput('result', await redis.get(key()))
+  get: async () => {
+    await connect();
+    setJsonOutput("result", await redis.get(key()));
   },
-  'set': async () => {
-    await connect()
-    const k = key(), v = value(), t = ttl()
+  set: async () => {
+    await connect();
+    const k = key(),
+      v = value(),
+      t = ttl();
     const result = t
-      ? await redis.set(k, v, 'EX', parseInt(t, 10))
-      : await redis.set(k, v)
-    setJsonOutput('result', result)
+      ? await redis.set(k, v, "EX", parseInt(t, 10))
+      : await redis.set(k, v);
+    setJsonOutput("result", result);
   },
-  'setnx': async () => {
-    await connect()
-    const k = key(), v = value(), t = ttl()
-    const result = await redis.setnx(k, v)
+  setnx: async () => {
+    await connect();
+    const k = key(),
+      v = value(),
+      t = ttl();
+    const result = await redis.setnx(k, v);
     if (result === 1 && t) {
-      await redis.expire(k, parseInt(t, 10))
+      await redis.expire(k, parseInt(t, 10));
     }
-    setJsonOutput('result', result)
+    setJsonOutput("result", result);
   },
-  'getset': async () => {
-    await connect()
-    setJsonOutput('result', await redis.getset(key(), value()))
+  getset: async () => {
+    await connect();
+    setJsonOutput("result", await redis.getset(key(), value()));
   },
-  'del': async () => {
-    await connect()
-    setJsonOutput('result', await redis.del(key()))
+  del: async () => {
+    await connect();
+    setJsonOutput("result", await redis.del(key()));
   },
-  'exists': async () => {
-    await connect()
-    setJsonOutput('result', await redis.exists(key()))
+  exists: async () => {
+    await connect();
+    setJsonOutput("result", await redis.exists(key()));
   },
-  'incr': async () => {
-    await connect()
-    setJsonOutput('result', await redis.incr(key()))
+  incr: async () => {
+    await connect();
+    setJsonOutput("result", await redis.incr(key()));
   },
-  'decr': async () => {
-    await connect()
-    setJsonOutput('result', await redis.decr(key()))
+  decr: async () => {
+    await connect();
+    setJsonOutput("result", await redis.decr(key()));
   },
-  'incrby': async () => {
-    await connect()
-    setJsonOutput('result', await redis.incrby(key(), parseInt(value(), 10)))
+  incrby: async () => {
+    await connect();
+    setJsonOutput("result", await redis.incrby(key(), parseInt(value(), 10)));
   },
-  'expire': async () => {
-    await connect()
-    setJsonOutput('result', await redis.expire(key(), parseInt(ttl(), 10)))
+  expire: async () => {
+    await connect();
+    setJsonOutput("result", await redis.expire(key(), parseInt(ttl(), 10)));
   },
-  'ttl': async () => {
-    await connect()
-    setJsonOutput('result', await redis.ttl(key()))
+  ttl: async () => {
+    await connect();
+    setJsonOutput("result", await redis.ttl(key()));
   },
-  'keys': async () => {
-    await connect()
-    const pattern = lib_core.getInput('pattern') || '*'
-    setJsonOutput('result', await redis.keys(pattern))
+  keys: async () => {
+    await connect();
+    const pattern = lib_core.getInput("pattern") || "*";
+    setJsonOutput("result", await redis.keys(pattern));
   },
-  'mget': async () => {
-    await connect()
-    const keys = key().split(',').map((k) => k.trim()).filter(Boolean)
-    setJsonOutput('result', await redis.mget(...keys))
+  mget: async () => {
+    await connect();
+    const keys = key()
+      .split(",")
+      .map((k) => k.trim())
+      .filter(Boolean);
+    setJsonOutput("result", await redis.mget(...keys));
   },
-  'mset': async () => {
-    await connect()
+  mset: async () => {
+    await connect();
     // value format: "key1:val1,key2:val2"
-    const pairs = value().split(',').map((p) => p.trim())
-    const args = []
+    const pairs = value()
+      .split(",")
+      .map((p) => p.trim());
+    const args = [];
     for (const pair of pairs) {
-      const [k, ...rest] = pair.split(':')
-      args.push(k.trim(), rest.join(':').trim())
+      const [k, ...rest] = pair.split(":");
+      args.push(k.trim(), rest.join(":").trim());
     }
-    setJsonOutput('result', await redis.mset(...args))
+    setJsonOutput("result", await redis.mset(...args));
   },
 
   // --- List operations ---
-  'lpush': async () => {
-    await connect()
-    setJsonOutput('result', await redis.lpush(key(), value()))
+  lpush: async () => {
+    await connect();
+    setJsonOutput("result", await redis.lpush(key(), value()));
   },
-  'rpush': async () => {
-    await connect()
-    setJsonOutput('result', await redis.rpush(key(), value()))
+  rpush: async () => {
+    await connect();
+    setJsonOutput("result", await redis.rpush(key(), value()));
   },
-  'lpop': async () => {
-    await connect()
-    setJsonOutput('result', await redis.lpop(key()))
+  lpop: async () => {
+    await connect();
+    setJsonOutput("result", await redis.lpop(key()));
   },
-  'rpop': async () => {
-    await connect()
-    setJsonOutput('result', await redis.rpop(key()))
+  rpop: async () => {
+    await connect();
+    setJsonOutput("result", await redis.rpop(key()));
   },
-  'lrange': async () => {
-    await connect()
-    const start = parseInt(lib_core.getInput('start') || '0', 10)
-    const stop = parseInt(lib_core.getInput('stop') || '-1', 10)
-    setJsonOutput('result', await redis.lrange(key(), start, stop))
+  lrange: async () => {
+    await connect();
+    const start = parseInt(lib_core.getInput("start") || "0", 10);
+    const stop = parseInt(lib_core.getInput("stop") || "-1", 10);
+    setJsonOutput("result", await redis.lrange(key(), start, stop));
   },
-  'llen': async () => {
-    await connect()
-    setJsonOutput('result', await redis.llen(key()))
+  llen: async () => {
+    await connect();
+    setJsonOutput("result", await redis.llen(key()));
   },
 
   // --- Hash operations ---
-  'hget': async () => {
-    await connect()
-    setJsonOutput('result', await redis.hget(key(), field()))
+  hget: async () => {
+    await connect();
+    setJsonOutput("result", await redis.hget(key(), field()));
   },
-  'hset': async () => {
-    await connect()
-    setJsonOutput('result', await redis.hset(key(), field(), value()))
+  hset: async () => {
+    await connect();
+    setJsonOutput("result", await redis.hset(key(), field(), value()));
   },
-  'hdel': async () => {
-    await connect()
-    setJsonOutput('result', await redis.hdel(key(), field()))
+  hdel: async () => {
+    await connect();
+    setJsonOutput("result", await redis.hdel(key(), field()));
   },
-  'hgetall': async () => {
-    await connect()
-    setJsonOutput('result', await redis.hgetall(key()))
+  hgetall: async () => {
+    await connect();
+    setJsonOutput("result", await redis.hgetall(key()));
   },
-  'hincrby': async () => {
-    await connect()
-    setJsonOutput('result', await redis.hincrby(key(), field(), parseInt(value(), 10)))
+  hincrby: async () => {
+    await connect();
+    setJsonOutput(
+      "result",
+      await redis.hincrby(key(), field(), parseInt(value(), 10)),
+    );
   },
 
   // --- Set operations ---
-  'sadd': async () => {
-    await connect()
-    setJsonOutput('result', await redis.sadd(key(), value()))
+  sadd: async () => {
+    await connect();
+    setJsonOutput("result", await redis.sadd(key(), value()));
   },
-  'srem': async () => {
-    await connect()
-    setJsonOutput('result', await redis.srem(key(), value()))
+  srem: async () => {
+    await connect();
+    setJsonOutput("result", await redis.srem(key(), value()));
   },
-  'smembers': async () => {
-    await connect()
-    setJsonOutput('result', await redis.smembers(key()))
+  smembers: async () => {
+    await connect();
+    setJsonOutput("result", await redis.smembers(key()));
   },
-  'sismember': async () => {
-    await connect()
-    setJsonOutput('result', await redis.sismember(key(), value()))
+  sismember: async () => {
+    await connect();
+    setJsonOutput("result", await redis.sismember(key(), value()));
   },
-  'scard': async () => {
-    await connect()
-    setJsonOutput('result', await redis.scard(key()))
+  scard: async () => {
+    await connect();
+    setJsonOutput("result", await redis.scard(key()));
   },
 
   // --- Pub/Sub (publish only) ---
-  'publish': async () => {
-    await connect()
-    setJsonOutput('result', await redis.publish(key(), value()))
+  publish: async () => {
+    await connect();
+    setJsonOutput("result", await redis.publish(key(), value()));
   },
 
   // --- Utility ---
-  'ping': async () => {
-    await connect()
-    setJsonOutput('result', await redis.ping())
+  ping: async () => {
+    await connect();
+    setJsonOutput("result", await redis.ping());
   },
-  'dbsize': async () => {
-    await connect()
-    setJsonOutput('result', await redis.dbsize())
+  dbsize: async () => {
+    await connect();
+    setJsonOutput("result", await redis.dbsize());
   },
-  'flushdb': async () => {
-    await connect()
-    setJsonOutput('result', await redis.flushdb())
+  flushdb: async () => {
+    await connect();
+    setJsonOutput("result", await redis.flushdb());
   },
-})
+});
 
-function key() { return lib_core.getInput('key') || '' }
-function value() { return lib_core.getInput('value') || '' }
-function field() { return lib_core.getInput('field') || '' }
-function ttl() { return lib_core.getInput('ttl') || '' }
+function key() {
+  return lib_core.getInput("key") || "";
+}
+function value() {
+  return lib_core.getInput("value") || "";
+}
+function field() {
+  return lib_core.getInput("field") || "";
+}
+function ttl() {
+  return lib_core.getInput("ttl") || "";
+}
 
 async function connect() {
-  const url = lib_core.getInput('url', { required: true })
+  const url = lib_core.getInput("url", { required: true });
   redis = new built(url, {
     connectTimeout: 10000,
     maxRetriesPerRequest: 1,
     lazyConnect: true,
-  })
-  await redis.connect()
+  });
+  await redis.connect();
 }
 
-router().finally(() => {
-  if (redis) redis.disconnect()
-})
+// Suppress noisy unhandled rejection warnings; the wrapper below
+// catches via handleError, which calls core.setFailed.
+process.on("unhandledRejection", () => {});
+
+(async () => {
+  try {
+    await router();
+  } catch (error) {
+    handleError(error);
+  } finally {
+    if (redis) redis.disconnect();
+  }
+})();
 
