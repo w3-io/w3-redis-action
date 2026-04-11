@@ -11,7 +11,7 @@ W3 Redis Action provides a Redis key-value store interface for W3 workflows -- s
     url: ${{ secrets.REDIS_URL }}
     key: user:123:name
     value: Alice
-    ttl: '3600'
+    ttl: "3600"
 
 - uses: w3/redis@v1
   id: cached
@@ -25,76 +25,76 @@ W3 Redis Action provides a Redis key-value store interface for W3 workflows -- s
 
 ### Strings
 
-| Command | Required Inputs | Description |
-|---------|----------------|-------------|
-| `get` | `url`, `key` | Get value by key |
-| `set` | `url`, `key`, `value` | Set value (optional `ttl` in seconds) |
-| `setnx` | `url`, `key`, `value` | Set only if key does not exist (distributed lock) |
-| `getset` | `url`, `key`, `value` | Atomic get-and-replace |
-| `del` | `url`, `key` | Delete a key |
-| `exists` | `url`, `key` | Check if key exists (returns 0 or 1) |
-| `mget` | `url`, `key` | Get multiple keys (comma-separated) |
-| `mset` | `url`, `value` | Set multiple keys (`key1:val1,key2:val2`) |
-| `keys` | `url` | Find keys matching a glob `pattern` (default `*`) |
+| Command  | Required Inputs       | Description                                       |
+| -------- | --------------------- | ------------------------------------------------- |
+| `get`    | `url`, `key`          | Get value by key                                  |
+| `set`    | `url`, `key`, `value` | Set value (optional `ttl` in seconds)             |
+| `setnx`  | `url`, `key`, `value` | Set only if key does not exist (distributed lock) |
+| `getset` | `url`, `key`, `value` | Atomic get-and-replace                            |
+| `del`    | `url`, `key`          | Delete a key                                      |
+| `exists` | `url`, `key`          | Check if key exists (returns 0 or 1)              |
+| `mget`   | `url`, `key`          | Get multiple keys (comma-separated)               |
+| `mset`   | `url`, `value`        | Set multiple keys (`key1:val1,key2:val2`)         |
+| `keys`   | `url`                 | Find keys matching a glob `pattern` (default `*`) |
 
 ### Counters
 
-| Command | Required Inputs | Description |
-|---------|----------------|-------------|
-| `incr` | `url`, `key` | Increment by 1 |
-| `decr` | `url`, `key` | Decrement by 1 |
+| Command  | Required Inputs       | Description                   |
+| -------- | --------------------- | ----------------------------- |
+| `incr`   | `url`, `key`          | Increment by 1                |
+| `decr`   | `url`, `key`          | Decrement by 1                |
 | `incrby` | `url`, `key`, `value` | Increment by specified amount |
 
 ### TTL
 
-| Command | Required Inputs | Description |
-|---------|----------------|-------------|
+| Command  | Required Inputs     | Description                       |
+| -------- | ------------------- | --------------------------------- |
 | `expire` | `url`, `key`, `ttl` | Set TTL on existing key (seconds) |
-| `ttl` | `url`, `key` | Get remaining TTL in seconds |
+| `ttl`    | `url`, `key`        | Get remaining TTL in seconds      |
 
 ### Lists
 
-| Command | Required Inputs | Description |
-|---------|----------------|-------------|
-| `lpush` | `url`, `key`, `value` | Push to front of list |
-| `rpush` | `url`, `key`, `value` | Push to back of list |
-| `lpop` | `url`, `key` | Pop from front |
-| `rpop` | `url`, `key` | Pop from back |
-| `lrange` | `url`, `key` | Get items by index range (`start`, `stop`) |
-| `llen` | `url`, `key` | Get list length |
+| Command  | Required Inputs       | Description                                |
+| -------- | --------------------- | ------------------------------------------ |
+| `lpush`  | `url`, `key`, `value` | Push to front of list                      |
+| `rpush`  | `url`, `key`, `value` | Push to back of list                       |
+| `lpop`   | `url`, `key`          | Pop from front                             |
+| `rpop`   | `url`, `key`          | Pop from back                              |
+| `lrange` | `url`, `key`          | Get items by index range (`start`, `stop`) |
+| `llen`   | `url`, `key`          | Get list length                            |
 
 ### Hashes
 
-| Command | Required Inputs | Description |
-|---------|----------------|-------------|
-| `hget` | `url`, `key`, `field` | Get hash field value |
-| `hset` | `url`, `key`, `field`, `value` | Set hash field value |
-| `hdel` | `url`, `key`, `field` | Delete hash field |
-| `hgetall` | `url`, `key` | Get all fields and values |
+| Command   | Required Inputs                | Description                    |
+| --------- | ------------------------------ | ------------------------------ |
+| `hget`    | `url`, `key`, `field`          | Get hash field value           |
+| `hset`    | `url`, `key`, `field`, `value` | Set hash field value           |
+| `hdel`    | `url`, `key`, `field`          | Delete hash field              |
+| `hgetall` | `url`, `key`                   | Get all fields and values      |
 | `hincrby` | `url`, `key`, `field`, `value` | Increment hash field by amount |
 
 ### Sets
 
-| Command | Required Inputs | Description |
-|---------|----------------|-------------|
-| `sadd` | `url`, `key`, `value` | Add member to set |
-| `srem` | `url`, `key`, `value` | Remove member |
-| `smembers` | `url`, `key` | List all members |
+| Command     | Required Inputs       | Description                       |
+| ----------- | --------------------- | --------------------------------- |
+| `sadd`      | `url`, `key`, `value` | Add member to set                 |
+| `srem`      | `url`, `key`, `value` | Remove member                     |
+| `smembers`  | `url`, `key`          | List all members                  |
 | `sismember` | `url`, `key`, `value` | Check membership (returns 0 or 1) |
-| `scard` | `url`, `key` | Get set size |
+| `scard`     | `url`, `key`          | Get set size                      |
 
 ### Pub/Sub
 
-| Command | Required Inputs | Description |
-|---------|----------------|-------------|
+| Command   | Required Inputs       | Description                                                 |
+| --------- | --------------------- | ----------------------------------------------------------- |
 | `publish` | `url`, `key`, `value` | Publish message to channel (`key`=channel, `value`=message) |
 
 ### Utility
 
-| Command | Required Inputs | Description |
-|---------|----------------|-------------|
-| `ping` | `url` | Test connection |
-| `dbsize` | `url` | Get number of keys in database |
+| Command  | Required Inputs | Description                    |
+| -------- | --------------- | ------------------------------ |
+| `ping`   | `url`           | Test connection                |
+| `dbsize` | `url`           | Get number of keys in database |
 
 ## Authentication
 
@@ -130,7 +130,7 @@ jobs:
           command: expire
           url: ${{ secrets.REDIS_URL }}
           key: ratelimit:user:42
-          ttl: '3600'
+          ttl: "3600"
 
       - name: Cache API response
         uses: w3/redis@v1
@@ -139,7 +139,7 @@ jobs:
           url: ${{ secrets.REDIS_URL }}
           key: cache:prices:eth
           value: '{"usd": 3250.00, "updated": "2025-01-15T12:00:00Z"}'
-          ttl: '300'
+          ttl: "300"
 
       - name: Track user activity
         uses: w3/redis@v1
@@ -156,6 +156,6 @@ jobs:
           command: lrange
           url: ${{ secrets.REDIS_URL }}
           key: activity:user:42
-          start: '0'
-          stop: '9'
+          start: "0"
+          stop: "9"
 ```

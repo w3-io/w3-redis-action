@@ -1,47 +1,47 @@
-name: 'W3 Redis Action'
-description: 'Redis key-value store, caching, counters, lists, and TTL for W3 workflows'
-author: 'w3-io'
+name: "W3 Redis Action"
+description: "Redis key-value store, caching, counters, lists, and TTL for W3 workflows"
+author: "w3-io"
 
 inputs:
   command:
-    description: 'Operation: get, set, del, incr, decr, expire, ttl, exists, keys, lpush, rpush, lpop, rpop, lrange, llen, hget, hset, hdel, hgetall, sadd, smembers, sismember, srem'
+    description: "Operation: get, set, del, incr, decr, expire, ttl, exists, keys, lpush, rpush, lpop, rpop, lrange, llen, hget, hset, hdel, hgetall, sadd, smembers, sismember, srem"
     required: true
   url:
-    description: 'Redis connection URL (redis://user:pass@host:port)'
+    description: "Redis connection URL (redis://user:pass@host:port)"
     required: true
   key:
-    description: 'Redis key'
+    description: "Redis key"
     required: false
-    default: ''
+    default: ""
   value:
-    description: 'Value for set/lpush/rpush/sadd/hset operations'
+    description: "Value for set/lpush/rpush/sadd/hset operations"
     required: false
-    default: ''
+    default: ""
   field:
-    description: 'Hash field name (for hget/hset/hdel)'
+    description: "Hash field name (for hget/hset/hdel)"
     required: false
-    default: ''
+    default: ""
   ttl:
-    description: 'TTL in seconds (for set with expiry, or expire command)'
+    description: "TTL in seconds (for set with expiry, or expire command)"
     required: false
-    default: ''
+    default: ""
   start:
-    description: 'Start index for lrange (default: 0)'
+    description: "Start index for lrange (default: 0)"
     required: false
-    default: '0'
+    default: "0"
   stop:
-    description: 'Stop index for lrange (default: -1, meaning all)'
+    description: "Stop index for lrange (default: -1, meaning all)"
     required: false
-    default: '-1'
+    default: "-1"
   pattern:
-    description: 'Pattern for keys command (default: *)'
+    description: "Pattern for keys command (default: *)"
     required: false
-    default: '*'
+    default: "*"
 
 outputs:
   result:
-    description: 'Command result as JSON string'
+    description: "Command result as JSON string"
 
 runs:
-  using: 'node20'
-  main: 'dist/index.js'
+  using: "node20"
+  main: "dist/index.js"
