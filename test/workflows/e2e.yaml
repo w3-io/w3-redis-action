@@ -11,303 +11,311 @@
 #     (e.g. redis://localhost:6379)
 
 name: redis-e2e
+on:
+  workflow_dispatch: {}
 
-steps:
-  # ── Utility ────────────────────────────────────────────────────────────
+jobs:
+  reads:
+    runs-on: ubuntu-latest
+    steps:
+      # ── Utility ────────────────────────────────────────────────────────────
 
-  - name: Ping the server
-    uses: w3-io/w3-redis-action@v0
-    with:
-      command: ping
-      url: ${{ secrets.REDIS_URL }}
+      - name: Ping the server
+        uses: w3-io/w3-redis-action@v0
+        with:
+          command: ping
+          url: ${{ secrets.REDIS_URL }}
 
-  - name: Get database size
-    uses: w3-io/w3-redis-action@v0
-    with:
-      command: dbsize
-      url: ${{ secrets.REDIS_URL }}
+      - name: Get database size
+        uses: w3-io/w3-redis-action@v0
+        with:
+          command: dbsize
+          url: ${{ secrets.REDIS_URL }}
 
-  # ── String Operations ──────────────────────────────────────────────────
+  writes:
+    runs-on: ubuntu-latest
+    steps:
+      # ── String Operations ──────────────────────────────────────────────────
 
-  - name: Set a key
-    uses: w3-io/w3-redis-action@v0
-    with:
-      command: set
-      url: ${{ secrets.REDIS_URL }}
-      key: e2e:greeting
-      value: hello-world
-      ttl: "300"
+      - name: Set a key
+        uses: w3-io/w3-redis-action@v0
+        with:
+          command: set
+          url: ${{ secrets.REDIS_URL }}
+          key: e2e:greeting
+          value: hello-world
+          ttl: "300"
 
-  - name: Get the key
-    uses: w3-io/w3-redis-action@v0
-    with:
-      command: get
-      url: ${{ secrets.REDIS_URL }}
-      key: e2e:greeting
+      - name: Get the key
+        uses: w3-io/w3-redis-action@v0
+        with:
+          command: get
+          url: ${{ secrets.REDIS_URL }}
+          key: e2e:greeting
 
-  - name: Set if not exists
-    uses: w3-io/w3-redis-action@v0
-    with:
-      command: setnx
-      url: ${{ secrets.REDIS_URL }}
-      key: e2e:unique
-      value: first-write-wins
-      ttl: "300"
+      - name: Set if not exists
+        uses: w3-io/w3-redis-action@v0
+        with:
+          command: setnx
+          url: ${{ secrets.REDIS_URL }}
+          key: e2e:unique
+          value: first-write-wins
+          ttl: "300"
 
-  - name: Get and set atomically
-    uses: w3-io/w3-redis-action@v0
-    with:
-      command: getset
-      url: ${{ secrets.REDIS_URL }}
-      key: e2e:greeting
-      value: hello-updated
+      - name: Get and set atomically
+        uses: w3-io/w3-redis-action@v0
+        with:
+          command: getset
+          url: ${{ secrets.REDIS_URL }}
+          key: e2e:greeting
+          value: hello-updated
 
-  - name: Check key exists
-    uses: w3-io/w3-redis-action@v0
-    with:
-      command: exists
-      url: ${{ secrets.REDIS_URL }}
-      key: e2e:greeting
+      - name: Check key exists
+        uses: w3-io/w3-redis-action@v0
+        with:
+          command: exists
+          url: ${{ secrets.REDIS_URL }}
+          key: e2e:greeting
 
-  - name: Get TTL
-    uses: w3-io/w3-redis-action@v0
-    with:
-      command: ttl
-      url: ${{ secrets.REDIS_URL }}
-      key: e2e:greeting
+      - name: Get TTL
+        uses: w3-io/w3-redis-action@v0
+        with:
+          command: ttl
+          url: ${{ secrets.REDIS_URL }}
+          key: e2e:greeting
 
-  - name: Set expiry
-    uses: w3-io/w3-redis-action@v0
-    with:
-      command: expire
-      url: ${{ secrets.REDIS_URL }}
-      key: e2e:greeting
-      ttl: "600"
+      - name: Set expiry
+        uses: w3-io/w3-redis-action@v0
+        with:
+          command: expire
+          url: ${{ secrets.REDIS_URL }}
+          key: e2e:greeting
+          ttl: "600"
 
-  - name: Multi-get keys
-    uses: w3-io/w3-redis-action@v0
-    with:
-      command: mget
-      url: ${{ secrets.REDIS_URL }}
-      key: e2e:greeting,e2e:unique
+      - name: Multi-get keys
+        uses: w3-io/w3-redis-action@v0
+        with:
+          command: mget
+          url: ${{ secrets.REDIS_URL }}
+          key: e2e:greeting,e2e:unique
 
-  - name: Multi-set keys
-    uses: w3-io/w3-redis-action@v0
-    with:
-      command: mset
-      url: ${{ secrets.REDIS_URL }}
-      value: "e2e:a:alpha,e2e:b:beta"
+      - name: Multi-set keys
+        uses: w3-io/w3-redis-action@v0
+        with:
+          command: mset
+          url: ${{ secrets.REDIS_URL }}
+          value: "e2e:a:alpha,e2e:b:beta"
 
-  # ── Counter Operations ─────────────────────────────────────────────────
+      # ── Counter Operations ─────────────────────────────────────────────────
 
-  - name: Set a counter
-    uses: w3-io/w3-redis-action@v0
-    with:
-      command: set
-      url: ${{ secrets.REDIS_URL }}
-      key: e2e:counter
-      value: "10"
+      - name: Set a counter
+        uses: w3-io/w3-redis-action@v0
+        with:
+          command: set
+          url: ${{ secrets.REDIS_URL }}
+          key: e2e:counter
+          value: "10"
 
-  - name: Increment counter
-    uses: w3-io/w3-redis-action@v0
-    with:
-      command: incr
-      url: ${{ secrets.REDIS_URL }}
-      key: e2e:counter
+      - name: Increment counter
+        uses: w3-io/w3-redis-action@v0
+        with:
+          command: incr
+          url: ${{ secrets.REDIS_URL }}
+          key: e2e:counter
 
-  - name: Decrement counter
-    uses: w3-io/w3-redis-action@v0
-    with:
-      command: decr
-      url: ${{ secrets.REDIS_URL }}
-      key: e2e:counter
+      - name: Decrement counter
+        uses: w3-io/w3-redis-action@v0
+        with:
+          command: decr
+          url: ${{ secrets.REDIS_URL }}
+          key: e2e:counter
 
-  - name: Increment by amount
-    uses: w3-io/w3-redis-action@v0
-    with:
-      command: incrby
-      url: ${{ secrets.REDIS_URL }}
-      key: e2e:counter
-      value: "5"
+      - name: Increment by amount
+        uses: w3-io/w3-redis-action@v0
+        with:
+          command: incrby
+          url: ${{ secrets.REDIS_URL }}
+          key: e2e:counter
+          value: "5"
 
-  # ── List Operations ────────────────────────────────────────────────────
+      # ── List Operations ────────────────────────────────────────────────────
 
-  - name: Push to list from left
-    uses: w3-io/w3-redis-action@v0
-    with:
-      command: lpush
-      url: ${{ secrets.REDIS_URL }}
-      key: e2e:queue
-      value: first
+      - name: Push to list from left
+        uses: w3-io/w3-redis-action@v0
+        with:
+          command: lpush
+          url: ${{ secrets.REDIS_URL }}
+          key: e2e:queue
+          value: first
 
-  - name: Push to list from right
-    uses: w3-io/w3-redis-action@v0
-    with:
-      command: rpush
-      url: ${{ secrets.REDIS_URL }}
-      key: e2e:queue
-      value: last
+      - name: Push to list from right
+        uses: w3-io/w3-redis-action@v0
+        with:
+          command: rpush
+          url: ${{ secrets.REDIS_URL }}
+          key: e2e:queue
+          value: last
 
-  - name: Get list range
-    uses: w3-io/w3-redis-action@v0
-    with:
-      command: lrange
-      url: ${{ secrets.REDIS_URL }}
-      key: e2e:queue
-      start: "0"
-      stop: "-1"
+      - name: Get list range
+        uses: w3-io/w3-redis-action@v0
+        with:
+          command: lrange
+          url: ${{ secrets.REDIS_URL }}
+          key: e2e:queue
+          start: "0"
+          stop: "-1"
 
-  - name: Get list length
-    uses: w3-io/w3-redis-action@v0
-    with:
-      command: llen
-      url: ${{ secrets.REDIS_URL }}
-      key: e2e:queue
+      - name: Get list length
+        uses: w3-io/w3-redis-action@v0
+        with:
+          command: llen
+          url: ${{ secrets.REDIS_URL }}
+          key: e2e:queue
 
-  - name: Pop from left
-    uses: w3-io/w3-redis-action@v0
-    with:
-      command: lpop
-      url: ${{ secrets.REDIS_URL }}
-      key: e2e:queue
+      - name: Pop from left
+        uses: w3-io/w3-redis-action@v0
+        with:
+          command: lpop
+          url: ${{ secrets.REDIS_URL }}
+          key: e2e:queue
 
-  - name: Pop from right
-    uses: w3-io/w3-redis-action@v0
-    with:
-      command: rpop
-      url: ${{ secrets.REDIS_URL }}
-      key: e2e:queue
+      - name: Pop from right
+        uses: w3-io/w3-redis-action@v0
+        with:
+          command: rpop
+          url: ${{ secrets.REDIS_URL }}
+          key: e2e:queue
 
-  # ── Hash Operations ────────────────────────────────────────────────────
+      # ── Hash Operations ────────────────────────────────────────────────────
 
-  - name: Set a hash field
-    uses: w3-io/w3-redis-action@v0
-    with:
-      command: hset
-      url: ${{ secrets.REDIS_URL }}
-      key: e2e:user:1
-      field: name
-      value: Alice
+      - name: Set a hash field
+        uses: w3-io/w3-redis-action@v0
+        with:
+          command: hset
+          url: ${{ secrets.REDIS_URL }}
+          key: e2e:user:1
+          field: name
+          value: Alice
 
-  - name: Set another hash field
-    uses: w3-io/w3-redis-action@v0
-    with:
-      command: hset
-      url: ${{ secrets.REDIS_URL }}
-      key: e2e:user:1
-      field: age
-      value: "30"
+      - name: Set another hash field
+        uses: w3-io/w3-redis-action@v0
+        with:
+          command: hset
+          url: ${{ secrets.REDIS_URL }}
+          key: e2e:user:1
+          field: age
+          value: "30"
 
-  - name: Get a hash field
-    uses: w3-io/w3-redis-action@v0
-    with:
-      command: hget
-      url: ${{ secrets.REDIS_URL }}
-      key: e2e:user:1
-      field: name
+      - name: Get a hash field
+        uses: w3-io/w3-redis-action@v0
+        with:
+          command: hget
+          url: ${{ secrets.REDIS_URL }}
+          key: e2e:user:1
+          field: name
 
-  - name: Get all hash fields
-    uses: w3-io/w3-redis-action@v0
-    with:
-      command: hgetall
-      url: ${{ secrets.REDIS_URL }}
-      key: e2e:user:1
+      - name: Get all hash fields
+        uses: w3-io/w3-redis-action@v0
+        with:
+          command: hgetall
+          url: ${{ secrets.REDIS_URL }}
+          key: e2e:user:1
 
-  - name: Increment hash field
-    uses: w3-io/w3-redis-action@v0
-    with:
-      command: hincrby
-      url: ${{ secrets.REDIS_URL }}
-      key: e2e:user:1
-      field: age
-      value: "1"
+      - name: Increment hash field
+        uses: w3-io/w3-redis-action@v0
+        with:
+          command: hincrby
+          url: ${{ secrets.REDIS_URL }}
+          key: e2e:user:1
+          field: age
+          value: "1"
 
-  - name: Delete a hash field
-    uses: w3-io/w3-redis-action@v0
-    with:
-      command: hdel
-      url: ${{ secrets.REDIS_URL }}
-      key: e2e:user:1
-      field: age
+      - name: Delete a hash field
+        uses: w3-io/w3-redis-action@v0
+        with:
+          command: hdel
+          url: ${{ secrets.REDIS_URL }}
+          key: e2e:user:1
+          field: age
 
-  # ── Set Operations ─────────────────────────────────────────────────────
+      # ── Set Operations ─────────────────────────────────────────────────────
 
-  - name: Add to set
-    uses: w3-io/w3-redis-action@v0
-    with:
-      command: sadd
-      url: ${{ secrets.REDIS_URL }}
-      key: e2e:tags
-      value: alpha
+      - name: Add to set
+        uses: w3-io/w3-redis-action@v0
+        with:
+          command: sadd
+          url: ${{ secrets.REDIS_URL }}
+          key: e2e:tags
+          value: alpha
 
-  - name: Add another member
-    uses: w3-io/w3-redis-action@v0
-    with:
-      command: sadd
-      url: ${{ secrets.REDIS_URL }}
-      key: e2e:tags
-      value: beta
+      - name: Add another member
+        uses: w3-io/w3-redis-action@v0
+        with:
+          command: sadd
+          url: ${{ secrets.REDIS_URL }}
+          key: e2e:tags
+          value: beta
 
-  - name: Get set members
-    uses: w3-io/w3-redis-action@v0
-    with:
-      command: smembers
-      url: ${{ secrets.REDIS_URL }}
-      key: e2e:tags
+      - name: Get set members
+        uses: w3-io/w3-redis-action@v0
+        with:
+          command: smembers
+          url: ${{ secrets.REDIS_URL }}
+          key: e2e:tags
 
-  - name: Check set membership
-    uses: w3-io/w3-redis-action@v0
-    with:
-      command: sismember
-      url: ${{ secrets.REDIS_URL }}
-      key: e2e:tags
-      value: alpha
+      - name: Check set membership
+        uses: w3-io/w3-redis-action@v0
+        with:
+          command: sismember
+          url: ${{ secrets.REDIS_URL }}
+          key: e2e:tags
+          value: alpha
 
-  - name: Get set size
-    uses: w3-io/w3-redis-action@v0
-    with:
-      command: scard
-      url: ${{ secrets.REDIS_URL }}
-      key: e2e:tags
+      - name: Get set size
+        uses: w3-io/w3-redis-action@v0
+        with:
+          command: scard
+          url: ${{ secrets.REDIS_URL }}
+          key: e2e:tags
 
-  - name: Remove from set
-    uses: w3-io/w3-redis-action@v0
-    with:
-      command: srem
-      url: ${{ secrets.REDIS_URL }}
-      key: e2e:tags
-      value: beta
+      - name: Remove from set
+        uses: w3-io/w3-redis-action@v0
+        with:
+          command: srem
+          url: ${{ secrets.REDIS_URL }}
+          key: e2e:tags
+          value: beta
 
-  # ── Pub/Sub ────────────────────────────────────────────────────────────
+      # ── Pub/Sub ────────────────────────────────────────────────────────────
 
-  - name: Publish a message
-    uses: w3-io/w3-redis-action@v0
-    with:
-      command: publish
-      url: ${{ secrets.REDIS_URL }}
-      key: e2e:channel
-      value: '{"event":"test","timestamp":"2026-01-01T00:00:00Z"}'
+      - name: Publish a message
+        uses: w3-io/w3-redis-action@v0
+        with:
+          command: publish
+          url: ${{ secrets.REDIS_URL }}
+          key: e2e:channel
+          value: '{"event":"test","timestamp":"2026-01-01T00:00:00Z"}'
 
-  # ── Key Pattern Search ─────────────────────────────────────────────────
+      # ── Key Pattern Search ─────────────────────────────────────────────────
 
-  - name: Find keys by pattern
-    uses: w3-io/w3-redis-action@v0
-    with:
-      command: keys
-      url: ${{ secrets.REDIS_URL }}
-      pattern: "e2e:*"
+      - name: Find keys by pattern
+        uses: w3-io/w3-redis-action@v0
+        with:
+          command: keys
+          url: ${{ secrets.REDIS_URL }}
+          pattern: "e2e:*"
 
-  # ── Cleanup ────────────────────────────────────────────────────────────
+      # ── Cleanup ────────────────────────────────────────────────────────────
 
-  - name: Delete all test keys
-    uses: w3-io/w3-redis-action@v0
-    with:
-      command: del
-      url: ${{ secrets.REDIS_URL }}
-      key: e2e:greeting
+      - name: Delete all test keys
+        uses: w3-io/w3-redis-action@v0
+        with:
+          command: del
+          url: ${{ secrets.REDIS_URL }}
+          key: e2e:greeting
 
-  - name: Flush the test database
-    uses: w3-io/w3-redis-action@v0
-    with:
-      command: flushdb
-      url: ${{ secrets.REDIS_URL }}
+      - name: Flush the test database
+        uses: w3-io/w3-redis-action@v0
+        with:
+          command: flushdb
+          url: ${{ secrets.REDIS_URL }}
