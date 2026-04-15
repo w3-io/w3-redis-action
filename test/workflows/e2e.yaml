@@ -314,8 +314,9 @@ jobs:
           url: ${{ secrets.REDIS_URL }}
           key: e2e:greeting
 
-      - name: Flush the test database
-        uses: w3-io/w3-redis-action@v0
-        with:
-          command: flushdb
-          url: ${{ secrets.REDIS_URL }}
+      # SKIP: flushdb is restricted on managed Redis providers
+      # - name: Flush the test database
+      #   uses: w3-io/w3-redis-action@v0
+      #   with:
+      #     command: flushdb
+      #     url: ${{ secrets.REDIS_URL }}
