@@ -1,214 +1,239 @@
 kind: integration
-name: Redis key-value store, caching, counters, lists, hashes, sets, and distributed
+name:
+  Redis key-value store, caching, counters, lists, hashes, sets, and distributed
   locks
 version: 0.1.0
 repo: w3-io/w3-redis-action
-description: Redis key-value store, caching, counters, lists, hashes, sets, and distributed
+description:
+  Redis key-value store, caching, counters, lists, hashes, sets, and distributed
   locks
-context: 'Shared state between workflows. Cache API results with TTL, rate-limit with
+context:
+  "Shared state between workflows. Cache API results with TTL, rate-limit with
   atomic counters, deduplicate with sets, queue work with lists, store structured
   objects with hashes, and acquire distributed locks with setnx. Connects to any Redis-compatible
   server (Redis Cloud, Upstash, ElastiCache, self-hosted) via standard connection
   URL.
 
-  '
+  "
 commands:
-- name: get
-  description: Get a string value by key.
-  inputs:
-    key:
-      type: string
-      required: true
-      description: Redis key
-  outputs:
-    result:
-      type: string
-      description: Value (or null if not found)
-- name: set
-  description: Set a string value with optional TTL.
-  inputs:
-    key:
-      type: string
-      required: true
-      description: Redis key
-    value:
-      type: string
-      required: true
-      description: Value to store
-    ttl:
-      type: number
-      required: false
-      description: Expiry in seconds
-  outputs:
-    result:
-      type: string
-      description: '"OK"'
-- name: del
-  description: Delete a key.
-  inputs:
-    key:
-      type: string
-      required: true
-      description: Redis key
-  outputs:
-    result:
-      type: number
-      description: Number of keys deleted
-- name: incr
-  description: Atomically increment a counter.
-  inputs:
-    key:
-      type: string
-      required: true
-      description: Redis key
-  outputs:
-    result:
-      type: number
-      description: New value after increment
-- name: setnx
-  description: Set only if key does not exist (distributed lock).
-  inputs:
-    key:
-      type: string
-      required: true
-      description: Redis key
-    value:
-      type: string
-      required: true
-      description: Value to store
-    ttl:
-      type: number
-      required: false
-      description: Lock expiry in seconds
-  outputs:
-    result:
-      type: number
-      description: 1 if set (lock acquired), 0 if already exists
-- name: lpush
-  description: Push value to front of list.
-  inputs:
-    key:
-      type: string
-      required: true
-      description: List key
-    value:
-      type: string
-      required: true
-      description: Value to push
-  outputs:
-    result:
-      type: number
-      description: List length after push
-- name: rpop
-  description: Pop value from back of list (queue consumer).
-  inputs:
-    key:
-      type: string
-      required: true
-      description: List key
-  outputs:
-    result:
-      type: string
-      description: Popped value (or null if empty)
-- name: hset
-  description: Set a field in a hash (structured object).
-  inputs:
-    key:
-      type: string
-      required: true
-      description: Hash key
-    field:
-      type: string
-      required: true
-      description: Field name
-    value:
-      type: string
-      required: true
-      description: Field value
-  outputs:
-    result:
-      type: number
-      description: 1 if new field, 0 if updated
-- name: hgetall
-  description: Get all fields of a hash.
-  inputs:
-    key:
-      type: string
-      required: true
-      description: Hash key
-  outputs:
-    result:
-      type: object
-      description: '{field1: value1, field2: value2, ...}'
-- name: sadd
-  description: Add value to a set (deduplication).
-  inputs:
-    key:
-      type: string
-      required: true
-      description: Set key
-    value:
-      type: string
-      required: true
-      description: Value to add
-  outputs:
-    result:
-      type: number
-      description: 1 if added, 0 if already exists
-- name: sismember
-  description: Check if value is in a set.
-  inputs:
-    key:
-      type: string
-      required: true
-      description: Set key
-    value:
-      type: string
-      required: true
-      description: Value to check
-  outputs:
-    result:
-      type: number
-      description: 1 if member, 0 if not
-- name: getset
-  description: Getset.
-- name: exists
-  description: Exists.
-- name: expire
-  description: Expire.
-- name: ttl
-  description: Ttl.
-- name: keys
-  description: Keys.
-- name: incrby
-  description: Incrby.
-- name: decr
-  description: Decr.
-- name: mget
-  description: Mget.
-- name: mset
-  description: Mset.
-- name: rpush
-  description: Rpush.
-- name: lpop
-  description: Lpop.
-- name: lrange
-  description: Lrange.
-- name: llen
-  description: Llen.
-- name: hdel
-  description: Hdel.
-- name: hincrby
-  description: Hincrby.
-- name: srem
-  description: Srem.
-- name: smembers
-  description: Smembers.
-- name: scard
-  description: Scard.
-- name: publish
-  description: Publish.
-- name: dbsize
-  description: Dbsize.
-- name: flushdb
-  description: Flushdb.
+  - name: get
+    description: Get a string value by key.
+    inputs:
+      key:
+        type: string
+        required: true
+        description: Redis key
+    outputs:
+      result:
+        type: string
+        description: Value (or null if not found)
+  - name: set
+    description: Set a string value with optional TTL.
+    inputs:
+      key:
+        type: string
+        required: true
+        description: Redis key
+      value:
+        type: string
+        required: true
+        description: Value to store
+      ttl:
+        type: number
+        required: false
+        description: Expiry in seconds
+    outputs:
+      result:
+        type: string
+        description: '"OK"'
+  - name: del
+    description: Delete a key.
+    inputs:
+      key:
+        type: string
+        required: true
+        description: Redis key
+    outputs:
+      result:
+        type: number
+        description: Number of keys deleted
+  - name: incr
+    description: Atomically increment a counter.
+    inputs:
+      key:
+        type: string
+        required: true
+        description: Redis key
+    outputs:
+      result:
+        type: number
+        description: New value after increment
+  - name: setnx
+    description: Set only if key does not exist (distributed lock).
+    inputs:
+      key:
+        type: string
+        required: true
+        description: Redis key
+      value:
+        type: string
+        required: true
+        description: Value to store
+      ttl:
+        type: number
+        required: false
+        description: Lock expiry in seconds
+    outputs:
+      result:
+        type: number
+        description: 1 if set (lock acquired), 0 if already exists
+  - name: lpush
+    description: Push value to front of list.
+    inputs:
+      key:
+        type: string
+        required: true
+        description: List key
+      value:
+        type: string
+        required: true
+        description: Value to push
+    outputs:
+      result:
+        type: number
+        description: List length after push
+  - name: rpop
+    description: Pop value from back of list (queue consumer).
+    inputs:
+      key:
+        type: string
+        required: true
+        description: List key
+    outputs:
+      result:
+        type: string
+        description: Popped value (or null if empty)
+  - name: hset
+    description: Set a field in a hash (structured object).
+    inputs:
+      key:
+        type: string
+        required: true
+        description: Hash key
+      field:
+        type: string
+        required: true
+        description: Field name
+      value:
+        type: string
+        required: true
+        description: Field value
+    outputs:
+      result:
+        type: number
+        description: 1 if new field, 0 if updated
+  - name: hget
+    description: Get a single field from a hash.
+    inputs:
+      key:
+        type: string
+        required: true
+        description: Hash key
+      field:
+        type: string
+        required: true
+        description: Field name
+    outputs:
+      result:
+        type: string
+        description: Field value (or null if not found)
+  - name: hgetall
+    description: Get all fields of a hash.
+    inputs:
+      key:
+        type: string
+        required: true
+        description: Hash key
+    outputs:
+      result:
+        type: object
+        description: "{field1: value1, field2: value2, ...}"
+  - name: sadd
+    description: Add value to a set (deduplication).
+    inputs:
+      key:
+        type: string
+        required: true
+        description: Set key
+      value:
+        type: string
+        required: true
+        description: Value to add
+    outputs:
+      result:
+        type: number
+        description: 1 if added, 0 if already exists
+  - name: sismember
+    description: Check if value is in a set.
+    inputs:
+      key:
+        type: string
+        required: true
+        description: Set key
+      value:
+        type: string
+        required: true
+        description: Value to check
+    outputs:
+      result:
+        type: number
+        description: 1 if member, 0 if not
+  - name: getset
+    description: Getset.
+  - name: exists
+    description: Exists.
+  - name: expire
+    description: Expire.
+  - name: ttl
+    description: Ttl.
+  - name: keys
+    description: Keys.
+  - name: incrby
+    description: Incrby.
+  - name: decr
+    description: Decr.
+  - name: mget
+    description: Mget.
+  - name: mset
+    description: Mset.
+  - name: rpush
+    description: Rpush.
+  - name: lpop
+    description: Lpop.
+  - name: lrange
+    description: Lrange.
+  - name: llen
+    description: Llen.
+  - name: hdel
+    description: Hdel.
+  - name: hincrby
+    description: Hincrby.
+  - name: srem
+    description: Srem.
+  - name: smembers
+    description: Smembers.
+  - name: scard
+    description: Scard.
+  - name: publish
+    description: Publish.
+  - name: ping
+    description: Ping the Redis server to check connectivity.
+    inputs: {}
+    outputs:
+      result:
+        type: string
+        description: '"PONG" if the server is reachable'
+  - name: dbsize
+    description: Dbsize.
+  - name: flushdb
+    description: Flushdb.
