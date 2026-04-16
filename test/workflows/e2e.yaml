@@ -256,13 +256,12 @@ jobs:
           key: e2e:tags
           value: beta
 
-      # SKIP: smembers returns non-deterministic order causing assertion failures
-      # - name: Get set members
-      #   uses: w3-io/w3-redis-action@v0
-      #   with:
-      #     command: smembers
-      #     url: ${{ secrets.REDIS_URL }}
-      #     key: e2e:tags
+      - name: Get set members
+        uses: w3-io/w3-redis-action@v0
+        with:
+          command: smembers
+          url: ${{ secrets.REDIS_URL }}
+          key: e2e:tags
 
       - name: Check set membership
         uses: w3-io/w3-redis-action@v0
