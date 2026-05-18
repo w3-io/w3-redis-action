@@ -1,7 +1,6 @@
 kind: integration
-name:
-  Redis key-value store, caching, counters, lists, hashes, sets, and distributed
-  locks
+partner: redis
+name: Redis
 version: 0.1.0
 repo: w3-io/w3-redis-action
 description:
